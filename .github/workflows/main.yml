@@ -11,11 +11,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-system-x86 ovmf novnc websockify
-          wget -q https://github.com -O cloudflared
-          chmod +x cloudflared
+          curl -L --output cloudflared.deb https://github.com
+          sudo dpkg -i cloudflared.deb
+          sudo chmod 666 /dev/kvm
 
       - name: Descargar ISO de ZiroxOS
-        run: wget -O ziroxos.iso "https://github.com/zirox-os/zirox-os.github.io/releases/download/v0.1/zirox-os-2026.11.26-x86_64.iso"
+        run: wget -q -O ziroxos.iso "https://github.com/zirox-os/zirox-os.github.io/releases/download/v0.1/zirox-os-2026.11.26-x86_64.iso"
 
       - name: Iniciar ZiroxOS con pantalla web (noVNC)
         run: |
@@ -30,7 +31,7 @@ jobs:
 
           websockify --web=/usr/share/novnc/ 6080 localhost:5900 &
 
-          ./cloudflared tunnel --url http://localhost:6080 > tunnel.log 2>&1 &
+          cloudflared tunnel --url http://localhost:6080 > tunnel.log 2>&1 &
           for i in {1..15}; do
             URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.trycloudflare\.com' tunnel.log | head -n 1)
             if [ -n "$URL" ]; then
