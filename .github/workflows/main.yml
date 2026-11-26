@@ -9,10 +9,11 @@ jobs:
     steps:
       - name: Instalar QEMU, OVMF, noVNC y Cloudflared
         run: |
+          sudo mkdir -p --mode=0755 /usr/share/keyrings
+          curl -fsSL https://cloudflare.com | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://cloudflare.com any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
           sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 ovmf novnc websockify
-          curl -L --output cloudflared.deb https://github.com
-          sudo dpkg -i cloudflared.deb
+          sudo apt-get install -y qemu-system-x86 ovmf novnc websockify cloudflared
           sudo chmod 666 /dev/kvm
 
       - name: Descargar ISO de ZiroxOS
