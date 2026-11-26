@@ -1,0 +1,42 @@
+name: Probar ZiroxOS en Vivo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probar-live:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalar QEMU, OVMF, noVNC y Cloudflared
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 ovmf novnc websockify
+          wget -q https://github.com -O cloudflared
+          chmod +x cloudflared
+
+      - name: Descargar ISO de ZiroxOS
+        run: wget -O ziroxos.iso "https://github.com/zirox-os/zirox-os.github.io/releases/download/v0.1/zirox-os-2026.11.26-x86_64.iso"
+
+      - name: Iniciar ZiroxOS con pantalla web (noVNC)
+        run: |
+          # Arranca ZiroxOS con servidor VNC en el puerto 5900
+          qemu-system-x86_64 \
+            -enable-kvm \
+            -m 4096 \
+            -smp 2 \
+            -bios /usr/share/ovmf/OVMF.fd \
+            -cdrom ziroxos.iso \
+            -vga virtio \
+            -vnc :0 &
+
+          # Conecta VNC a una interfaz web en el puerto 6080
+          websockify --web=/usr/share/novnc/ 6080 localhost:5900 &
+
+          # Crea un enlace público temporal para abrirlo en tu navegador
+          ./cloudflared tunnel --url http://localhost:6080 > tunnel.log 2>&1 &
+          sleep 8
+          echo "=== ABRE ESTE ENLACE EN TU NAVEGADOR ==="
+          grep -o 'https://.*\.trycloudflare\.com' tunnel.log | head -n 1
+
+          # Mantiene la máquina encendida 30 minutos para que pruebes todo
+          sleep 1800
