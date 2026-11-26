@@ -24,17 +24,17 @@ jobs:
             -smp 2 \
             -bios /usr/share/ovmf/OVMF.fd \
             -cdrom ziroxos.iso \
-            -vga virtio \
+            -vga std \
             -vnc :0 &
 
           websockify --web=/usr/share/novnc/ 6080 localhost:5900 &
 
-          ssh -o StrictHostKeyChecking=no -R 80:localhost:6080 nokey@localhost.run > tunnel.log 2>&1 &
+          ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R0:localhost:6080 a.pinggy.io > tunnel.log 2>&1 &
           for i in {1..15}; do
-            URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.lhr\.life' tunnel.log | head -n 1)
+            URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.pinggy\.link' tunnel.log | head -n 1)
             if [ -n "$URL" ]; then
               echo "=== ABRE ESTE ENLACE EN TU NAVEGADOR ==="
-              echo "$URL/vnc.html"
+              echo "$URL/vnc.html?autoconnect=true&port=443&encrypt=1&resize=scale"
               break
             fi
             sleep 2
