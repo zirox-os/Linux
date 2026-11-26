@@ -7,13 +7,10 @@ jobs:
   probar-live:
     runs-on: ubuntu-latest
     steps:
-      - name: Instalar QEMU, OVMF, noVNC y Cloudflared
+      - name: Instalar QEMU, OVMF y noVNC
         run: |
-          sudo mkdir -p --mode=0755 /usr/share/keyrings
-          curl -fsSL https://cloudflare.com | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
-          echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://cloudflare.com any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
           sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 ovmf novnc websockify cloudflared
+          sudo apt-get install -y qemu-system-x86 ovmf novnc websockify
           sudo chmod 666 /dev/kvm
 
       - name: Descargar ISO de ZiroxOS
@@ -32,9 +29,9 @@ jobs:
 
           websockify --web=/usr/share/novnc/ 6080 localhost:5900 &
 
-          cloudflared tunnel --url http://localhost:6080 > tunnel.log 2>&1 &
+          ssh -o StrictHostKeyChecking=no -R 80:localhost:6080 nokey@localhost.run > tunnel.log 2>&1 &
           for i in {1..15}; do
-            URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.trycloudflare\.com' tunnel.log | head -n 1)
+            URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.lhr\.life' tunnel.log | head -n 1)
             if [ -n "$URL" ]; then
               echo "=== ABRE ESTE ENLACE EN TU NAVEGADOR ==="
               echo "$URL/vnc.html"
