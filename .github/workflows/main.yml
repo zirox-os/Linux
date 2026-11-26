@@ -19,7 +19,6 @@ jobs:
 
       - name: Iniciar ZiroxOS con pantalla web (noVNC)
         run: |
-          # Arranca ZiroxOS con servidor VNC en el puerto 5900
           qemu-system-x86_64 \
             -enable-kvm \
             -m 4096 \
@@ -29,14 +28,21 @@ jobs:
             -vga virtio \
             -vnc :0 &
 
-          # Conecta VNC a una interfaz web en el puerto 6080
           websockify --web=/usr/share/novnc/ 6080 localhost:5900 &
 
-          # Crea un enlace público temporal para abrirlo en tu navegador
           ./cloudflared tunnel --url http://localhost:6080 > tunnel.log 2>&1 &
-          sleep 8
-          echo "=== ABRE ESTE ENLACE EN TU NAVEGADOR ==="
-          grep -o 'https://.*\.trycloudflare\.com' tunnel.log | head -n 1
+          for i in {1..15}; do
+            URL=$(grep -o 'https://[a-zA-Z0-9.-]*\.trycloudflare\.com' tunnel.log | head -n 1)
+            if [ -n "$URL" ]; then
+              echo "=== ABRE ESTE ENLACE EN TU NAVEGADOR ==="
+              echo "$URL/vnc.html"
+              break
+            fi
+            sleep 2
+          done
 
-          # Mantiene la máquina encendida 30 minutos para que pruebes todo
+          if [ -z "$URL" ]; then
+            cat tunnel.log
+          fi
+
           sleep 1800
